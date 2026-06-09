@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TeamRouteImport } from './routes/team'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as NotificationsRouteImport } from './routes/notifications'
@@ -23,6 +24,11 @@ import { Route as ProjectsProjectIdRouteImport } from './routes/projects.$projec
 const TeamRoute = TeamRouteImport.update({
   id: '/team',
   path: '/team',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof NotificationsRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
+  '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
 }
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof NotificationsRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
+  '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
 }
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/notifications': typeof NotificationsRoute
   '/projects': typeof ProjectsRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
+  '/settings': typeof SettingsRoute
   '/team': typeof TeamRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
 }
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/projects'
     | '/reset-password'
+    | '/settings'
     | '/team'
     | '/projects/$projectId'
   fileRoutesByTo: FileRoutesByTo
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/projects'
     | '/reset-password'
+    | '/settings'
     | '/team'
     | '/projects/$projectId'
   id:
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/projects'
     | '/reset-password'
+    | '/settings'
     | '/team'
     | '/projects/$projectId'
   fileRoutesById: FileRoutesById
@@ -156,6 +168,7 @@ export interface RootRouteChildren {
   NotificationsRoute: typeof NotificationsRoute
   ProjectsRoute: typeof ProjectsRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SettingsRoute: typeof SettingsRoute
   TeamRoute: typeof TeamRoute
 }
 
@@ -166,6 +179,13 @@ declare module '@tanstack/react-router' {
       path: '/team'
       fullPath: '/team'
       preLoaderRoute: typeof TeamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -255,6 +275,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsRoute: NotificationsRoute,
   ProjectsRoute: ProjectsRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
+  SettingsRoute: SettingsRoute,
   TeamRoute: TeamRoute,
 }
 export const routeTree = rootRouteImport
