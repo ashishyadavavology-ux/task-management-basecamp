@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Card } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { UserAvatar } from "@/components/user-avatar";
-import { userById, currentUserId, workspace } from "@/lib/mock-data";
+import { useAppData } from "@/hooks/use-app-data";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — Hearth" }] }),
@@ -16,7 +17,27 @@ export const Route = createFileRoute("/settings")({
 });
 
 function Settings() {
-  const me = userById(currentUserId)!;
+  const { me, workspace, saveProfile } = useAppData();
+  const [name, setName] = useState(me?.name || "");
+  const [title, setTitle] = useState(me?.title || "");
+
+  useEffect(() => {
+    if (me) {
+      setName(me.name);
+      setTitle(me.title);
+    }
+  }, [me]);
+
+  if (!me) return null;
+
+  const handleSave = async () => {
+    try {
+      await saveProfile({ full_name: name, title });
+    } catch {
+      toast.error("Failed to save profile");
+    }
+  };
+
   return (
     <AppShell title="Settings">
       <div className="mx-auto max-w-3xl space-y-6">
@@ -28,30 +49,28 @@ function Settings() {
           </TabsList>
 
           <TabsContent value="profile" className="mt-4">
-            <Card className="gap-5 p-6">
+            <Card className="gap-5 rounded-2xl border-2 p-6">
               <div className="flex items-center gap-4">
                 <UserAvatar user={me} size="lg" />
-                <Button variant="outline" size="sm">Change photo</Button>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5"><Label>Full name</Label><Input defaultValue={me.name} /></div>
-                <div className="space-y-1.5"><Label>Title</Label><Input defaultValue={me.title} /></div>
-                <div className="space-y-1.5 sm:col-span-2"><Label>Email</Label><Input defaultValue={me.email} type="email" /></div>
+                <div className="space-y-1.5"><Label>Full name</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+                <div className="space-y-1.5"><Label>Title</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} /></div>
+                <div className="space-y-1.5 sm:col-span-2"><Label>Email</Label><Input defaultValue={me.email} type="email" disabled /></div>
               </div>
-              <Button className="w-fit" onClick={() => toast.success("Profile saved")}>Save changes</Button>
+              <Button className="w-fit rounded-full" onClick={handleSave}>Save changes</Button>
             </Card>
           </TabsContent>
 
           <TabsContent value="workspace" className="mt-4">
-            <Card className="gap-5 p-6">
-              <div className="space-y-1.5"><Label>Workspace name</Label><Input defaultValue={workspace.name} /></div>
-              <div className="space-y-1.5"><Label>Plan</Label><Input defaultValue={workspace.plan} disabled /></div>
-              <Button className="w-fit" onClick={() => toast.success("Workspace updated")}>Save</Button>
+            <Card className="gap-5 rounded-2xl border-2 p-6">
+              <div className="space-y-1.5"><Label>Workspace name</Label><Input defaultValue={workspace?.name} disabled /></div>
+              <div className="space-y-1.5"><Label>Plan</Label><Input defaultValue={workspace?.plan} disabled /></div>
             </Card>
           </TabsContent>
 
           <TabsContent value="notifications" className="mt-4">
-            <Card className="gap-1 p-6">
+            <Card className="gap-1 rounded-2xl border-2 p-6">
               {["Task assigned to me", "Mentions", "Deadline reminders", "Weekly digest email"].map((label, i) => (
                 <div key={label} className="flex items-center justify-between border-b py-3 last:border-0">
                   <span className="text-sm">{label}</span>

@@ -21,8 +21,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { AvatarStack } from "@/components/user-avatar";
 import { ProjectStatusBadge } from "@/components/badges";
-import { projects, activities, events, userById, currentUserId } from "@/lib/mock-data";
-import { useBoardStore } from "@/lib/board-store";
+import { useAppData } from "@/hooks/use-app-data";
 import { format } from "date-fns";
 
 export const Route = createFileRoute("/dashboard")({
@@ -40,8 +39,8 @@ const completionData = [
 ];
 
 function Dashboard() {
-  const tasks = useBoardStore((s) => s.tasks);
-  const me = userById(currentUserId)!;
+  const { me, projects, tasks, activities, userById, team } = useAppData();
+  if (!me) return null;
   const doneCount = tasks.filter((t) => t.status === "done").length;
   const inProgress = tasks.filter((t) => t.status === "in_progress").length;
 
@@ -55,16 +54,19 @@ function Dashboard() {
   return (
     <AppShell title="Dashboard">
       <div className="mx-auto max-w-7xl space-y-6">
-        <div className="flex flex-col gap-1">
-          <h2 className="font-display text-2xl font-semibold">Good to see you, {me.name.split(" ")[0]} 👋</h2>
-          <p className="text-sm text-muted-foreground">Here's what's happening across your workspace today.</p>
+        <div className="flex flex-col gap-1.5">
+          <p className="text-xs font-bold uppercase tracking-widest text-primary">Today</p>
+          <h2 className="font-display text-3xl font-semibold tracking-tight">
+            Hey {me.name.split(" ")[0]}, here's your workspace
+          </h2>
+          <p className="text-muted-foreground">Projects, tasks, and team activity at a glance.</p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard label="Active projects" value={projects.filter((p) => p.status === "active").length} icon={FolderKanban} trend={{ value: "+2", up: true }} index={0} />
           <StatCard label="Tasks completed" value={doneCount} icon={CheckCircle2} trend={{ value: "+18%", up: true }} index={1} />
           <StatCard label="In progress" value={inProgress} icon={Clock} index={2} />
-          <StatCard label="Team members" value={6} icon={Users} trend={{ value: "+1", up: true }} index={3} />
+          <StatCard label="Team members" value={team.length} icon={Users} index={3} />
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
@@ -158,27 +160,29 @@ function Dashboard() {
           <div className="space-y-6">
             <Card className="p-5">
               <h3 className="mb-4 font-semibold">Recent activity</h3>
-              <ActivityFeed items={activities.slice(0, 5)} />
+              <ActivityFeed items={activities.slice(0, 5)} userById={(id) => userById(id)} />
             </Card>
 
-            <Card className="gap-3 p-5">
+            <Card className="gap-3 rounded-2xl border-2 border-primary/20 bg-primary/[0.04] p-5">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <h3 className="font-semibold">AI insight</h3>
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/15">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                </div>
+                <h3 className="font-display font-semibold">Heads up</h3>
               </div>
-              <p className="text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">API Platform v2</span> is at risk — 3 urgent tasks
-                are due within 5 days. Consider reassigning load from Diego to Sam.
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                <span className="font-semibold text-foreground">API Platform v2</span> has 3 urgent tasks due
+                this week. Diego might be overloaded — Sam has capacity.
               </p>
             </Card>
 
             <Card className="p-5">
               <h3 className="mb-3 font-semibold">Upcoming deadlines</h3>
               <ul className="space-y-3">
-                {events.filter((e) => e.type === "deadline").slice(0, 4).map((e) => (
-                  <li key={e.id} className="flex items-center justify-between text-sm">
-                    <span className="truncate">{e.title}</span>
-                    <Badge variant="secondary">{format(new Date(e.date), "MMM d")}</Badge>
+                {tasks.filter((t) => t.dueDate).slice(0, 4).map((t) => (
+                  <li key={t.id} className="flex items-center justify-between text-sm">
+                    <span className="truncate">{t.title}</span>
+                    <Badge variant="secondary">{format(new Date(t.dueDate!), "MMM d")}</Badge>
                   </li>
                 ))}
               </ul>

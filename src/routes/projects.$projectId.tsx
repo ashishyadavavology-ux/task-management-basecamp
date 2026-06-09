@@ -8,20 +8,12 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { AvatarStack, UserAvatar } from "@/components/user-avatar";
 import { ProjectStatusBadge, PriorityBadge } from "@/components/badges";
-import { projectById, userById } from "@/lib/mock-data";
+import { useAppData } from "@/hooks/use-app-data";
 import { useBoardStore } from "@/lib/board-store";
 
 export const Route = createFileRoute("/projects/$projectId")({
   head: () => ({ meta: [{ title: "Board — Hearth" }] }),
-  loader: ({ params }) => {
-    const project = projectById(params.projectId);
-    if (!project) throw notFound();
-    return { project };
-  },
   component: ProjectDetail,
-  errorComponent: ({ error }) => (
-    <div className="p-10 text-center text-sm text-muted-foreground">{error.message}</div>
-  ),
   notFoundComponent: () => (
     <div className="p-10 text-center">
       <p className="text-sm text-muted-foreground">Project not found.</p>
@@ -31,17 +23,26 @@ export const Route = createFileRoute("/projects/$projectId")({
 });
 
 function ProjectDetail() {
-  const { project } = Route.useLoaderData();
-  const tasks = useBoardStore((s) => s.tasks).filter((t) => t.projectId === project.id);
+  const { projectId } = Route.useParams();
+  const { projects, userById, createTask } = useAppData();
+  const project = projects.find((p) => p.id === projectId);
+  const tasks = useBoardStore((s) => s.tasks).filter((t) => t.projectId === projectId);
+
+  if (!project) throw notFound();
+
+  const handleAddTask = () => {
+    const title = window.prompt("Task title");
+    if (title?.trim()) createTask(projectId, title.trim());
+  };
 
   return (
-    <AppShell action={<PageHeaderAction label="Add task" />}>
+    <AppShell action={<PageHeaderAction label="Add task" onClick={handleAddTask} />}>
       <div className="mx-auto max-w-7xl space-y-5">
         <Link to="/projects" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Projects
         </Link>
 
-        <Card className="gap-4 p-6">
+        <Card className="gap-4 rounded-2xl border-2 p-6 shadow-[var(--shadow-soft)]">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               <span className="h-4 w-4 rounded-full" style={{ background: project.color }} />
@@ -50,8 +51,10 @@ function ProjectDetail() {
               <PriorityBadge priority={project.priority} />
             </div>
             <div className="flex items-center gap-3">
-              <AvatarStack users={project.memberIds.map(userById)} size="md" />
-              <span className="text-sm text-muted-foreground">Due {format(new Date(project.dueDate), "MMM d, yyyy")}</span>
+              <AvatarStack users={project.memberIds.map((id) => userById(id))} size="md" />
+              {project.dueDate && (
+                <span className="text-sm text-muted-foreground">Due {format(new Date(project.dueDate), "MMM d, yyyy")}</span>
+              )}
             </div>
           </div>
           <p className="max-w-2xl text-sm text-muted-foreground">{project.description}</p>

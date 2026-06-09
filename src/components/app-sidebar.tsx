@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -8,7 +8,7 @@ import {
   Bell,
   Settings,
   Shield,
-  Flame,
+  LogOut,
 } from "lucide-react";
 import {
   Sidebar,
@@ -23,7 +23,9 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { UserAvatar } from "@/components/user-avatar";
-import { userById, currentUserId, workspace } from "@/lib/mock-data";
+import { BrandLogo } from "@/components/brand-logo";
+import { useAppData } from "@/hooks/use-app-data";
+import { useAuth } from "@/hooks/use-auth";
 
 const mainNav = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -41,33 +43,39 @@ const settingsNav = [
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const me = userById(currentUserId)!;
+  const navigate = useNavigate();
+  const { me, workspace } = useAppData();
+  const { signOut } = useAuth();
   const isActive = (url: string) => pathname === url || pathname.startsWith(url + "/");
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <Link to="/dashboard" className="flex items-center gap-2.5 px-2 py-1.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Flame className="h-4.5 w-4.5" />
-          </div>
-          <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
-            <span className="font-display text-sm font-semibold">Hearth</span>
-            <span className="text-xs text-muted-foreground">{workspace.name}</span>
-          </div>
+    <Sidebar collapsible="icon" className="border-r-2 border-sidebar-border">
+      <SidebarHeader className="p-4">
+        <Link to="/dashboard" className="block px-1 py-0.5">
+          <BrandLogo size="sm" />
+          <p className="mt-2 truncate px-1 text-[11px] font-medium text-muted-foreground group-data-[collapsible=icon]:hidden">
+            {workspace?.name || "Workspace"}
+          </p>
         </Link>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="px-2">
         <SidebarGroup>
-          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            Workspace
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive(item.url)}
+                    tooltip={item.title}
+                    className="rounded-xl font-medium data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:shadow-none"
+                  >
                     <Link to={item.url}>
-                      <item.icon />
+                      <item.icon className={isActive(item.url) ? "text-primary" : ""} />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -78,12 +86,19 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Manage</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            Manage
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {settingsNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive(item.url)}
+                    tooltip={item.title}
+                    className="rounded-xl font-medium"
+                  >
                     <Link to={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
@@ -91,20 +106,33 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip="Sign out"
+                  className="rounded-xl font-medium text-destructive hover:text-destructive"
+                  onClick={async () => {
+                    await signOut();
+                    navigate({ to: "/auth" });
+                  }}
+                >
+                  <LogOut />
+                  <span>Sign out</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="p-3">
         <Link
           to="/settings"
-          className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-sidebar-accent"
+          className="flex items-center gap-3 rounded-xl border-2 border-transparent p-2.5 transition-colors hover:border-border hover:bg-sidebar-accent"
         >
           <UserAvatar user={me} size="sm" />
           <div className="flex min-w-0 flex-col leading-tight group-data-[collapsible=icon]:hidden">
-            <span className="truncate text-sm font-medium">{me.name}</span>
-            <span className="truncate text-xs capitalize text-muted-foreground">{me.role}</span>
+            <span className="truncate text-sm font-semibold">{me?.name}</span>
+            <span className="truncate text-xs capitalize text-muted-foreground">{me?.role}</span>
           </div>
         </Link>
       </SidebarFooter>

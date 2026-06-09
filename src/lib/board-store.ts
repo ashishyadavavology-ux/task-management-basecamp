@@ -1,9 +1,9 @@
 import { create } from "zustand";
-import { tasks as seedTasks } from "./mock-data";
 import type { Task, TaskStatus } from "./types";
 
 interface BoardState {
   tasks: Task[];
+  setTasks: (tasks: Task[]) => void;
   moveTask: (taskId: string, toStatus: TaskStatus, toIndex: number) => void;
   addTask: (task: Task) => void;
   updateTask: (taskId: string, patch: Partial<Task>) => void;
@@ -11,7 +11,8 @@ interface BoardState {
 }
 
 export const useBoardStore = create<BoardState>((set) => ({
-  tasks: seedTasks,
+  tasks: [],
+  setTasks: (tasks) => set({ tasks }),
   moveTask: (taskId, toStatus, toIndex) =>
     set((state) => {
       const task = state.tasks.find((t) => t.id === taskId);

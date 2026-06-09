@@ -12,6 +12,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "../components/ui/sonner";
+import { AuthProvider } from "../hooks/use-auth";
+import { AppDataProvider } from "../hooks/use-app-data";
 
 function NotFoundComponent() {
   return (
@@ -78,16 +80,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "SupaBase Insights is a modern project management SaaS application." },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "SupaBase Insights is a modern project management SaaS application." },
+      { title: "Hearth — Project management for modern teams" },
+      { name: "description", content: "Hearth is a warm, calm workspace for teams — kanban boards, chat, calendars and collaboration." },
+      { name: "author", content: "Hearth" },
+      { property: "og:title", content: "Hearth — Project management for modern teams" },
+      { property: "og:description", content: "Kanban boards, real-time collaboration and calm project management." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Lovable App" },
-      { name: "twitter:description", content: "SupaBase Insights is a modern project management SaaS application." },
+      { name: "twitter:title", content: "Hearth — Project management for modern teams" },
+      { name: "twitter:description", content: "Kanban boards, real-time collaboration and calm project management." },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9ae6085e-6104-446c-b9f1-6155b30375d0/id-preview-25d504a1--f2d9cec6-0e17-4251-864d-92a709b56426.lovable.app-1780996195937.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9ae6085e-6104-446c-b9f1-6155b30375d0/id-preview-25d504a1--f2d9cec6-0e17-4251-864d-92a709b56426.lovable.app-1780996195937.png" },
     ],
@@ -96,7 +97,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&display=swap",
       },
       {
         rel: "stylesheet",
@@ -131,9 +132,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
-      <Toaster position="top-right" richColors closeButton />
+      <AuthProvider>
+        <AppDataProvider>
+          <Outlet />
+          <Toaster position="top-right" richColors closeButton />
+        </AppDataProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

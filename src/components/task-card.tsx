@@ -3,29 +3,40 @@ import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { PriorityBadge } from "@/components/badges";
 import { UserAvatar } from "@/components/user-avatar";
-import { userById } from "@/lib/mock-data";
-import type { Task } from "@/lib/types";
+import type { Task, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-export function TaskCard({ task, dragging }: { task: Task; dragging?: boolean }) {
-  const assignee = userById(task.assigneeId);
+export function TaskCard({
+  task,
+  dragging,
+  assignee,
+}: {
+  task: Task;
+  dragging?: boolean;
+  assignee?: User | null;
+}) {
   const doneSubtasks = task.subtasks.filter((s) => s.done).length;
+
   return (
     <Card
       className={cn(
-        "cursor-grab gap-2.5 rounded-xl p-3.5 shadow-[var(--shadow-soft)] transition-all active:cursor-grabbing",
-        dragging && "rotate-1 shadow-[var(--shadow-card)] ring-2 ring-primary/30",
+        "cursor-grab gap-2.5 rounded-xl border-2 border-border/60 bg-card p-3.5 shadow-[var(--shadow-soft)] transition-all active:cursor-grabbing",
+        "hover:border-primary/20 hover:shadow-[var(--shadow-card)]",
+        dragging && "rotate-1 border-primary/30 shadow-[var(--shadow-lift)] ring-2 ring-primary/20",
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-medium leading-snug">{task.title}</p>
+        <p className="text-sm font-semibold leading-snug">{task.title}</p>
         <PriorityBadge priority={task.priority} className="shrink-0 text-[10px]" />
       </div>
 
       {task.tags.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {task.tags.map((tag) => (
-            <span key={tag} className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+            <span
+              key={tag}
+              className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+            >
               #{tag}
             </span>
           ))}
@@ -53,7 +64,7 @@ export function TaskCard({ task, dragging }: { task: Task; dragging?: boolean })
             </span>
           )}
           {task.dueDate && (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 font-medium">
               <CalendarClock className="h-3.5 w-3.5" />
               {format(new Date(task.dueDate), "MMM d")}
             </span>

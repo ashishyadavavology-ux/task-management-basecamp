@@ -1,9 +1,14 @@
 import { formatDistanceToNow } from "date-fns";
 import { UserAvatar } from "@/components/user-avatar";
-import { userById } from "@/lib/mock-data";
-import type { Activity } from "@/lib/types";
+import type { Activity, User } from "@/lib/types";
 
-export function ActivityFeed({ items }: { items: Activity[] }) {
+export function ActivityFeed({
+  items,
+  userById,
+}: {
+  items: Activity[];
+  userById: (id: string) => User | undefined;
+}) {
   return (
     <ol className="relative space-y-5">
       {items.map((a, i) => {

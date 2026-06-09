@@ -92,15 +92,15 @@ export const TASK_COLUMNS: { id: TaskStatus; label: string }[] = [
 ];
 
 export const PRIORITY_META: Record<Priority, { label: string; className: string }> = {
-  low: { label: "Low", className: "bg-muted text-muted-foreground" },
-  medium: { label: "Medium", className: "bg-accent text-accent-foreground" },
-  high: { label: "High", className: "bg-warning/20 text-warning-foreground" },
-  urgent: { label: "Urgent", className: "bg-destructive/15 text-destructive" },
+  low: { label: "Low", className: "bg-muted font-semibold text-muted-foreground" },
+  medium: { label: "Medium", className: "bg-secondary font-semibold text-secondary-foreground" },
+  high: { label: "High", className: "bg-warning/20 font-semibold text-warning-foreground" },
+  urgent: { label: "Urgent", className: "bg-destructive/12 font-bold text-destructive" },
 };
 
 export const STATUS_META: Record<ProjectStatus, { label: string; className: string }> = {
-  planning: { label: "Planning", className: "bg-accent text-accent-foreground" },
-  active: { label: "Active", className: "bg-success/15 text-success" },
-  on_hold: { label: "On Hold", className: "bg-warning/20 text-warning-foreground" },
-  completed: { label: "Completed", className: "bg-muted text-muted-foreground" },
+  planning: { label: "Planning", className: "bg-chart-4/15 font-semibold text-chart-4" },
+  active: { label: "Active", className: "bg-success/12 font-semibold text-success" },
+  on_hold: { label: "On Hold", className: "bg-warning/15 font-semibold text-warning-foreground" },
+  completed: { label: "Completed", className: "bg-muted font-semibold text-muted-foreground" },
 };
