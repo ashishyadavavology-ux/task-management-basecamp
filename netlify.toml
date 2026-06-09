@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Required — set in Netlify Dashboard → Site configuration → Environment variables:
+#   VITE_SUPABASE_URL       = https://ziersnkdkclzaqotknxo.supabase.co
+#   VITE_SUPABASE_ANON_KEY  = your publishable/anon key
