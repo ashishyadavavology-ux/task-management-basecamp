@@ -39,7 +39,7 @@ const completionData = [
 ];
 
 function Dashboard() {
-  const { me, projects, tasks, activities, userById, team } = useAppData();
+  const { me, projects, tasks, activities, userById, team, isOwner } = useAppData();
   if (!me) return null;
   const doneCount = tasks.filter((t) => t.status === "done").length;
   const inProgress = tasks.filter((t) => t.status === "in_progress").length;
@@ -57,9 +57,13 @@ function Dashboard() {
         <div className="flex flex-col gap-1.5">
           <p className="text-xs font-bold uppercase tracking-widest text-primary">Today</p>
           <h2 className="font-display text-3xl font-semibold tracking-tight">
-            Hey {me.name.split(" ")[0]}, here's your workspace
+            Hey {me.firstName || me.name.split(" ")[0]}, {isOwner ? "here's your workspace" : "here are your assigned projects"}
           </h2>
-          <p className="text-muted-foreground">Projects, tasks, and team activity at a glance.</p>
+          <p className="text-muted-foreground">
+            {isOwner
+              ? "Projects, tasks, and team activity at a glance."
+              : "You only see projects Ashish assigned to you. Use Messages to chat with the team."}
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

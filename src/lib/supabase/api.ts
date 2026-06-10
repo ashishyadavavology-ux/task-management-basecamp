@@ -57,7 +57,7 @@ export async function fetchWorkspaceData(userId: string) {
 
   const { data: profileRows } = await supabase
     .from("profiles")
-    .select("id, full_name, email, title, avatar_color")
+    .select("id, full_name, first_name, last_name, phone, email, title, avatar_color")
     .in("id", memberIds.length ? memberIds : [userId]);
 
   const roleByUser = new Map((memberRows || []).map((m) => [m.user_id, m.role]));
@@ -256,6 +256,87 @@ export async function removeTeamMember(workspaceId: string, userId: string, owne
       .eq("user_id", userId)
       .in("project_id", projectIds);
   }
+}
+
+export async function fetchDirectMessages(workspaceId: string, userId: string, peerId: string) {
+  const { data, error } = await supabase
+    .from("direct_messages")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .or(
+      `and(sender_id.eq.${userId},recipient_id.eq.${peerId}),and(sender_id.eq.${peerId},recipient_id.eq.${userId})`,
+    )
+    .order("created_at");
+  if (error) throw error;
+  return (data || []).map(mapDirectMessage);
+}
+
+export function mapDirectMessage(row: {
+  id: string;
+  workspace_id: string;
+  sender_id: string;
+  recipient_id: string;
+  body: string;
+  created_at: string;
+  is_pinned?: boolean;
+  edited_at?: string | null;
+  attachment_url?: string | null;
+  attachment_name?: string | null;
+  attachment_type?: string | null;
+}) {
+  return {
+    id: row.id,
+    workspaceId: row.workspace_id,
+    senderId: row.sender_id,
+    recipientId: row.recipient_id,
+    body: row.body,
+    createdAt: row.created_at,
+    isPinned: row.is_pinned ?? false,
+    editedAt: row.edited_at ?? null,
+    attachmentUrl: row.attachment_url ?? null,
+    attachmentName: row.attachment_name ?? null,
+    attachmentType: (row.attachment_type as "image" | "pdf" | null) ?? null,
+  };
+}
+
+export async function sendDirectMessage(
+  workspaceId: string,
+  senderId: string,
+  recipientId: string,
+  body: string,
+  attachment?: { url: string; name: string; type: "image" | "pdf" },
+) {
+  const { data, error } = await supabase
+    .from("direct_messages")
+    .insert({
+      workspace_id: workspaceId,
+      sender_id: senderId,
+      recipient_id: recipientId,
+      body: body || "",
+      attachment_url: attachment?.url ?? null,
+      attachment_name: attachment?.name ?? null,
+      attachment_type: attachment?.type ?? null,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return mapDirectMessage(data);
+}
+
+export async function updateDirectMessage(messageId: string, body: string) {
+  const { data, error } = await supabase
+    .from("direct_messages")
+    .update({ body, edited_at: new Date().toISOString() })
+    .eq("id", messageId)
+    .select()
+    .single();
+  if (error) throw error;
+  return mapDirectMessage(data);
+}
+
+export async function deleteDirectMessage(messageId: string) {
+  const { error } = await supabase.from("direct_messages").delete().eq("id", messageId);
+  if (error) throw error;
 }
 
 export async function fetchPendingInvites(workspaceId: string) {

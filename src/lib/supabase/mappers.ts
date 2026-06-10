@@ -33,16 +33,26 @@ export function mapProfile(
   row: {
     id: string;
     full_name: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
+    phone?: string | null;
     email: string | null;
     title: string | null;
     avatar_color: string | null;
   },
   role: Role = "member",
 ): User {
-  const name = row.full_name || row.email || "User";
+  const firstName = row.first_name || row.full_name?.split(" ")[0] || "";
+  const lastName =
+    row.last_name ||
+    (row.full_name?.includes(" ") ? row.full_name.split(" ").slice(1).join(" ") : "");
+  const name = row.full_name || `${firstName} ${lastName}`.trim() || row.email || "User";
   return {
     id: row.id,
     name,
+    firstName,
+    lastName,
+    phone: row.phone || "",
     email: row.email || "",
     role,
     avatarColor: row.avatar_color || "oklch(0.52 0.14 42)",

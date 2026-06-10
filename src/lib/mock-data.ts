@@ -14,12 +14,12 @@ import type {
 export const currentUserId = "u1";
 
 export const users: User[] = [
-  { id: "u1", name: "Ashish Yadav", email: "ashish@basecamp.app", role: "admin", avatarColor: "oklch(0.58 0.17 252)", initials: "AY", title: "Basecamp Project Management" },
-  { id: "u2", name: "Marcus Reed", email: "marcus@hearth.app", role: "manager", avatarColor: "oklch(0.65 0.16 155)", initials: "MR", title: "Product Lead" },
-  { id: "u3", name: "Lena Okafor", email: "lena@hearth.app", role: "member", avatarColor: "oklch(0.62 0.2 300)", initials: "LO", title: "Designer" },
-  { id: "u4", name: "Diego Torres", email: "diego@hearth.app", role: "member", avatarColor: "oklch(0.78 0.15 75)", initials: "DT", title: "Engineer" },
-  { id: "u5", name: "Priya Nair", email: "priya@hearth.app", role: "manager", avatarColor: "oklch(0.65 0.21 20)", initials: "PN", title: "Ops Manager" },
-  { id: "u6", name: "Sam Whitfield", email: "sam@hearth.app", role: "member", avatarColor: "oklch(0.55 0.12 200)", initials: "SW", title: "QA Engineer" },
+  { id: "u1", name: "Ashish Yadav", firstName: "Ashish", lastName: "Yadav", phone: "", email: "ashish@basecamp.app", role: "admin", avatarColor: "oklch(0.58 0.17 252)", initials: "AY", title: "Basecamp Project Management" },
+  { id: "u2", name: "Marcus Reed", firstName: "Marcus", lastName: "Reed", phone: "", email: "marcus@hearth.app", role: "manager", avatarColor: "oklch(0.65 0.16 155)", initials: "MR", title: "Product Lead" },
+  { id: "u3", name: "Lena Okafor", firstName: "Lena", lastName: "Okafor", phone: "", email: "lena@hearth.app", role: "member", avatarColor: "oklch(0.62 0.2 300)", initials: "LO", title: "Designer" },
+  { id: "u4", name: "Diego Torres", firstName: "Diego", lastName: "Torres", phone: "", email: "diego@hearth.app", role: "member", avatarColor: "oklch(0.78 0.15 75)", initials: "DT", title: "Engineer" },
+  { id: "u5", name: "Priya Nair", firstName: "Priya", lastName: "Nair", phone: "", email: "priya@hearth.app", role: "manager", avatarColor: "oklch(0.65 0.21 20)", initials: "PN", title: "Ops Manager" },
+  { id: "u6", name: "Sam Whitfield", firstName: "Sam", lastName: "Whitfield", phone: "", email: "sam@hearth.app", role: "member", avatarColor: "oklch(0.55 0.12 200)", initials: "SW", title: "QA Engineer" },
 ];
 
 export const workspace = {

@@ -8,11 +8,28 @@ export type TaskStatus = "todo" | "in_progress" | "review" | "done";
 export interface User {
   id: string;
   name: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
   email: string;
   role: Role;
   avatarColor: string;
   initials: string;
   title: string;
+}
+
+export interface DirectMessage {
+  id: string;
+  workspaceId: string;
+  senderId: string;
+  recipientId: string;
+  body: string;
+  createdAt: string;
+  isPinned: boolean;
+  editedAt: string | null;
+  attachmentUrl: string | null;
+  attachmentName: string | null;
+  attachmentType: MessageAttachmentType | null;
 }
 
 export interface Project {

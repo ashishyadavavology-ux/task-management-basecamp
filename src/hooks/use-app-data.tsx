@@ -19,20 +19,25 @@ import type {
   User,
 } from "@/lib/types";
 import {
+  createTeamMember,
+  deleteTeamMember,
+  updateTeamMember,
+} from "@/lib/api/admin.functions";
+import {
   createProject,
   createTask,
   deleteProject,
   fetchPendingInvites,
   fetchWorkspaceData,
-  inviteTeamMember,
   markNotificationsRead,
-  removeTeamMember,
   sendMessage,
   updateProfile,
   updateProject,
   updateTaskInDb,
 } from "@/lib/supabase/api";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./use-auth";
+import type { MemberFormInput } from "@/components/member-form-dialog";
 import { useBoardStore } from "@/lib/board-store";
 
 type Workspace = { id: string; name: string; plan: string; memberCount: number; ownerId: string };
@@ -70,7 +75,8 @@ type AppDataContextValue = {
     },
   ) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
-  inviteMember: (email: string) => Promise<void>;
+  addMember: (input: MemberFormInput) => Promise<void>;
+  editMember: (userId: string, input: MemberFormInput) => Promise<void>;
   removeMember: (userId: string) => Promise<void>;
   createTask: (projectId: string, title: string) => Promise<void>;
   moveTask: (taskId: string, toStatus: TaskStatus, toIndex: number) => Promise<void>;
@@ -181,22 +187,58 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     toast.success("Project deleted");
   };
 
-  const handleInviteMember = async (email: string) => {
-    if (!user || !workspace) return;
-    const result = await inviteTeamMember(workspace.id, email, user.id);
+  const getAccessToken = async () => {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) throw new Error("Please sign in again.");
+    return token;
+  };
+
+  const handleAddMember = async (input: MemberFormInput) => {
+    if (!workspace) return;
+    const accessToken = await getAccessToken();
+    await createTeamMember({
+      data: {
+        accessToken,
+        workspaceId: workspace.id,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        email: input.email,
+        password: input.password!,
+        phone: input.phone,
+      },
+    });
     await refresh();
-    toast.success(
-      result.type === "added"
-        ? "Team member added to workspace"
-        : "Invite sent — they can sign up once with this email",
-    );
+    toast.success("Member added — they can sign in with email & password.");
+  };
+
+  const handleEditMember = async (userId: string, input: MemberFormInput) => {
+    if (!workspace) return;
+    const accessToken = await getAccessToken();
+    await updateTeamMember({
+      data: {
+        accessToken,
+        workspaceId: workspace.id,
+        userId,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        email: input.email,
+        password: input.password,
+        phone: input.phone,
+      },
+    });
+    await refresh();
+    toast.success("Member updated");
   };
 
   const handleRemoveMember = async (userId: string) => {
     if (!workspace) return;
-    await removeTeamMember(workspace.id, userId, workspace.ownerId);
+    const accessToken = await getAccessToken();
+    await deleteTeamMember({
+      data: { accessToken, workspaceId: workspace.id, userId },
+    });
     await refresh();
-    toast.success("Team member removed");
+    toast.success("Member removed");
   };
 
   const handleCreateTask = async (projectId: string, title: string) => {
@@ -262,7 +304,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       createProject: handleCreateProject,
       updateProject: handleUpdateProject,
       deleteProject: handleDeleteProject,
-      inviteMember: handleInviteMember,
+      addMember: handleAddMember,
+      editMember: handleEditMember,
       removeMember: handleRemoveMember,
       createTask: handleCreateTask,
       moveTask: handleMoveTask,
