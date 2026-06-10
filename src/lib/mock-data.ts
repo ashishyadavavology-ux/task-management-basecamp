@@ -14,7 +14,7 @@ import type {
 export const currentUserId = "u1";
 
 export const users: User[] = [
-  { id: "u1", name: "Ashis", email: "ashis@basecamp.app", role: "admin", avatarColor: "oklch(0.58 0.17 252)", initials: "A", title: "Basecamp Project Management" },
+  { id: "u1", name: "Ashish Yadav", email: "ashish@basecamp.app", role: "admin", avatarColor: "oklch(0.58 0.17 252)", initials: "AY", title: "Basecamp Project Management" },
   { id: "u2", name: "Marcus Reed", email: "marcus@hearth.app", role: "manager", avatarColor: "oklch(0.65 0.16 155)", initials: "MR", title: "Product Lead" },
   { id: "u3", name: "Lena Okafor", email: "lena@hearth.app", role: "member", avatarColor: "oklch(0.62 0.2 300)", initials: "LO", title: "Designer" },
   { id: "u4", name: "Diego Torres", email: "diego@hearth.app", role: "member", avatarColor: "oklch(0.78 0.15 75)", initials: "DT", title: "Engineer" },
@@ -24,7 +24,7 @@ export const users: User[] = [
 
 export const workspace = {
   id: "w1",
-  name: "Northwind Studio",
+  name: "Basecamp Project Management",
   plan: "Pro",
   memberCount: users.length,
 };
@@ -136,10 +136,10 @@ export const activities: Activity[] = [
 ];
 
 export const messages: Message[] = [
-  { id: "m1", projectId: "p1", userId: "u2", body: "Morning team! Reviewed the new welcome flow — looking sharp 🔥", createdAt: "2026-06-08T08:30:00Z", isPinned: false, editedAt: null },
-  { id: "m2", projectId: "p1", userId: "u3", body: "Thanks @Marcus! Pushing hi-fi mockups by EOD.", createdAt: "2026-06-08T08:34:00Z", isPinned: false, editedAt: null },
-  { id: "m3", projectId: "p1", userId: "u4", body: "Component library is ~70% done. Need final tokens from design.", createdAt: "2026-06-08T09:01:00Z", isPinned: false, editedAt: null },
-  { id: "m4", projectId: "p1", userId: "u1", body: "Great pace everyone. Let's sync at 2pm on TestFlight timing.", createdAt: "2026-06-08T09:15:00Z", isPinned: true, editedAt: null },
+  { id: "m1", projectId: "p1", userId: "u2", body: "Morning team! Reviewed the new welcome flow — looking sharp 🔥", createdAt: "2026-06-08T08:30:00Z", isPinned: false, editedAt: null, attachmentUrl: null, attachmentName: null, attachmentType: null },
+  { id: "m2", projectId: "p1", userId: "u3", body: "Thanks @Marcus! Pushing hi-fi mockups by EOD.", createdAt: "2026-06-08T08:34:00Z", isPinned: false, editedAt: null, attachmentUrl: null, attachmentName: null, attachmentType: null },
+  { id: "m3", projectId: "p1", userId: "u4", body: "Component library is ~70% done. Need final tokens from design.", createdAt: "2026-06-08T09:01:00Z", isPinned: false, editedAt: null, attachmentUrl: null, attachmentName: null, attachmentType: null },
+  { id: "m4", projectId: "p1", userId: "u1", body: "Great pace everyone. Let's sync at 2pm on TestFlight timing.", createdAt: "2026-06-08T09:15:00Z", isPinned: true, editedAt: null, attachmentUrl: null, attachmentName: null, attachmentType: null },
 ];
 
 export const notifications: Notification[] = [

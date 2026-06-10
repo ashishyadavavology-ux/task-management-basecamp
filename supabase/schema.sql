@@ -137,6 +137,9 @@ create table if not exists public.messages (
   body text not null,
   is_pinned boolean not null default false,
   edited_at timestamptz,
+  attachment_url text,
+  attachment_name text,
+  attachment_type text,
   created_at timestamptz not null default now()
 );
 

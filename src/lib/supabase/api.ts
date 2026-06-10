@@ -7,6 +7,7 @@ import {
   mapProfile,
   mapProject,
   mapTask,
+  sanitizeBrandText,
 } from "./mappers";
 
 export async function ensureWorkspace(userId: string, userName?: string) {
@@ -19,7 +20,7 @@ export async function ensureWorkspace(userId: string, userName?: string) {
 
   if (existing?.workspaces) {
     const ws = existing.workspaces as { id: string; name: string; plan: string | null };
-    return { id: ws.id, name: ws.name, plan: ws.plan || "Starter" };
+    return { id: ws.id, name: sanitizeBrandText(ws.name), plan: ws.plan || "Starter" };
   }
 
   const name = `${userName?.trim() || "My"}'s Workspace`;
@@ -245,10 +246,49 @@ export async function fetchMessages(projectId: string) {
   return (data || []).map(mapMessage);
 }
 
-export async function sendMessage(projectId: string, userId: string, body: string) {
+const CHAT_BUCKET = "chat-files";
+const MAX_CHAT_FILE_BYTES = 10 * 1024 * 1024;
+
+export function getChatAttachmentType(file: File): "image" | "pdf" | null {
+  if (file.type.startsWith("image/")) return "image";
+  if (file.type === "application/pdf") return "pdf";
+  return null;
+}
+
+export async function uploadChatFile(projectId: string, userId: string, file: File) {
+  const type = getChatAttachmentType(file);
+  if (!type) throw new Error("Only images and PDF files are allowed");
+  if (file.size > MAX_CHAT_FILE_BYTES) throw new Error("File must be under 10 MB");
+
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const path = `${projectId}/${userId}/${Date.now()}-${safeName}`;
+
+  const { error } = await supabase.storage.from(CHAT_BUCKET).upload(path, file, {
+    cacheControl: "3600",
+    upsert: false,
+  });
+  if (error) throw error;
+
+  const { data } = supabase.storage.from(CHAT_BUCKET).getPublicUrl(path);
+  return { url: data.publicUrl, name: file.name, type };
+}
+
+export async function sendMessage(
+  projectId: string,
+  userId: string,
+  body: string,
+  attachment?: { url: string; name: string; type: "image" | "pdf" },
+) {
   const { data, error } = await supabase
     .from("messages")
-    .insert({ project_id: projectId, user_id: userId, body })
+    .insert({
+      project_id: projectId,
+      user_id: userId,
+      body: body || "",
+      attachment_url: attachment?.url ?? null,
+      attachment_name: attachment?.name ?? null,
+      attachment_type: attachment?.type ?? null,
+    })
     .select()
     .single();
   if (error) throw error;

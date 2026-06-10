@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Send, Pin, Pencil, Trash2, MoreHorizontal } from "lucide-react";
+import { Send, Pin, Pencil, Trash2, MoreHorizontal, Paperclip, X, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
@@ -9,14 +9,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { EmojiPicker } from "@/components/emoji-picker";
+import { MessageAttachment } from "@/components/message-attachment";
 import { useAppData } from "@/hooks/use-app-data";
 import { useAuth } from "@/hooks/use-auth";
 import {
   deleteMessage,
   fetchMessages,
+  getChatAttachmentType,
   sendMessage,
   toggleMessagePin,
   updateMessage,
+  uploadChatFile,
 } from "@/lib/supabase/api";
 import { supabase } from "@/integrations/supabase/client";
 import type { Message } from "@/lib/types";
@@ -48,10 +51,13 @@ function Messages() {
   const [active, setActive] = useState(projects[0]?.id || "");
   const [list, setList] = useState<Message[]>([]);
   const [text, setText] = useState("");
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [sending, setSending] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadMessages = useCallback(async (projectId: string) => {
     try {
@@ -92,14 +98,33 @@ function Messages() {
   const pinned = thread.filter((m) => m.isPinned);
   const regular = thread.filter((m) => !m.isPinned);
 
+  const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!getChatAttachmentType(file)) {
+      toast.error("Only images (JPG, PNG, GIF, WebP) and PDF files are allowed");
+      return;
+    }
+    setPendingFile(file);
+    e.target.value = "";
+  };
+
   const send = async () => {
-    if (!text.trim() || !active || !user) return;
+    if ((!text.trim() && !pendingFile) || !active || !user || sending) return;
+    setSending(true);
     try {
-      await sendMessage(active, user.id, text.trim());
+      let attachment: { url: string; name: string; type: "image" | "pdf" } | undefined;
+      if (pendingFile) {
+        attachment = await uploadChatFile(active, user.id, pendingFile);
+      }
+      await sendMessage(active, user.id, text.trim(), attachment);
       setText("");
+      setPendingFile(null);
       await loadMessages(active);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to send message");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -149,6 +174,7 @@ function Messages() {
     const u = userById(m.userId);
     const mine = m.userId === user?.id;
     const isEditing = editingId === m.id;
+    const hasAttachment = !!m.attachmentUrl;
 
     return (
       <div key={m.id} className={`group flex gap-2.5 ${mine ? "flex-row-reverse" : ""}`}>
@@ -175,43 +201,50 @@ function Messages() {
               <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button>
             </div>
           ) : (
-            <div className={`relative mt-1 inline-flex items-start gap-1 ${mine ? "flex-row-reverse" : ""}`}>
-              <p className={`inline-block rounded-2xl px-3.5 py-2 text-sm ${mine ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                {m.body}
-              </p>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-                  >
-                    <MoreHorizontal className="h-3.5 w-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align={mine ? "end" : "start"}>
-                  <DropdownMenuItem onClick={() => handlePin(m)}>
-                    <Pin className="mr-2 h-4 w-4" />
-                    {m.isPinned ? "Unpin" : "Pin message"}
-                  </DropdownMenuItem>
-                  {mine && (
-                    <DropdownMenuItem onClick={() => startEdit(m)}>
-                      <Pencil className="mr-2 h-4 w-4" /> Edit
+            <div className={`relative mt-1 inline-flex flex-col gap-1 ${mine ? "items-end" : "items-start"}`}>
+              <div className={`inline-flex items-start gap-1 ${mine ? "flex-row-reverse" : ""}`}>
+                {m.body ? (
+                  <p className={`inline-block rounded-2xl px-3.5 py-2 text-sm ${mine ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                    {m.body}
+                  </p>
+                ) : null}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+                    >
+                      <MoreHorizontal className="h-3.5 w-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align={mine ? "end" : "start"}>
+                    <DropdownMenuItem onClick={() => handlePin(m)}>
+                      <Pin className="mr-2 h-4 w-4" />
+                      {m.isPinned ? "Unpin" : "Pin message"}
                     </DropdownMenuItem>
-                  )}
-                  {mine && (
-                    <DropdownMenuItem className="text-destructive" onClick={() => setDeletingId(m.id)}>
-                      <Trash2 className="mr-2 h-4 w-4" /> Delete
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    {mine && !hasAttachment && (
+                      <DropdownMenuItem onClick={() => startEdit(m)}>
+                        <Pencil className="mr-2 h-4 w-4" /> Edit
+                      </DropdownMenuItem>
+                    )}
+                    {mine && (
+                      <DropdownMenuItem className="text-destructive" onClick={() => setDeletingId(m.id)}>
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <MessageAttachment message={m} />
             </div>
           )}
         </div>
       </div>
     );
   };
+
+  const canSend = (text.trim() || pendingFile) && !sending;
 
   return (
     <AppShell title="Messages">
@@ -239,15 +272,53 @@ function Messages() {
             {regular.map(renderMessage)}
             <div ref={bottomRef} />
           </div>
+
+          {pendingFile && (
+            <div className="flex items-center gap-2 border-t bg-muted/40 px-3 py-2">
+              {getChatAttachmentType(pendingFile) === "image" ? (
+                <img
+                  src={URL.createObjectURL(pendingFile)}
+                  alt="Preview"
+                  className="h-10 w-10 rounded-lg object-cover"
+                />
+              ) : (
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                  <FileText className="h-5 w-5 text-destructive" />
+                </div>
+              )}
+              <span className="flex-1 truncate text-sm">{pendingFile.name}</span>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPendingFile(null)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
           <div className="flex items-center gap-2 border-t p-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp,application/pdf"
+              className="hidden"
+              onChange={handleFilePick}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="shrink-0 rounded-full"
+              onClick={() => fileInputRef.current?.click()}
+              title="Attach image or PDF"
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
             <EmojiPicker onPick={addEmoji} />
             <Input
               placeholder="Write a message…"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && send()}
+              onKeyDown={(e) => e.key === "Enter" && canSend && send()}
             />
-            <Button size="icon" className="rounded-full" onClick={send} disabled={!text.trim()}>
+            <Button size="icon" className="rounded-full" onClick={send} disabled={!canSend}>
               <Send className="h-4 w-4" />
             </Button>
           </div>

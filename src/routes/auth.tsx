@@ -121,7 +121,7 @@ function AuthPage() {
               A
             </div>
             <div>
-              <p className="text-sm font-semibold">Ashis</p>
+              <p className="text-sm font-semibold">Ashish Yadav</p>
               <p className="text-sm text-primary-foreground/70">Basecamp Project Management</p>
             </div>
           </div>

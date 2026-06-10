@@ -59,6 +59,8 @@ export interface Activity {
   createdAt: string;
 }
 
+export type MessageAttachmentType = "image" | "pdf";
+
 export interface Message {
   id: string;
   projectId: string;
@@ -67,6 +69,9 @@ export interface Message {
   createdAt: string;
   isPinned: boolean;
   editedAt: string | null;
+  attachmentUrl: string | null;
+  attachmentName: string | null;
+  attachmentType: MessageAttachmentType | null;
 }
 
 export interface Notification {

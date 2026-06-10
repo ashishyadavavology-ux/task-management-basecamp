@@ -11,6 +11,14 @@ import type {
   User,
 } from "@/lib/types";
 
+/** Replace legacy Lovable branding with Basecamp in user-visible text. */
+export function sanitizeBrandText(text: string): string {
+  if (!text) return text;
+  return text
+    .replace(/\blovable\s+project\b/gi, "Basecamp Project")
+    .replace(/\blovable\b/gi, "Basecamp");
+}
+
 export function initials(name: string) {
   return name
     .split(" ")
@@ -59,8 +67,8 @@ export function mapProject(
 ): Project {
   return {
     id: row.id,
-    name: row.name,
-    description: row.description || "",
+    name: sanitizeBrandText(row.name),
+    description: sanitizeBrandText(row.description || ""),
     status: row.status,
     priority: row.priority,
     color: row.color || "oklch(0.52 0.14 42)",
@@ -129,6 +137,9 @@ export function mapMessage(row: {
   created_at: string;
   is_pinned?: boolean;
   edited_at?: string | null;
+  attachment_url?: string | null;
+  attachment_name?: string | null;
+  attachment_type?: string | null;
 }): Message {
   return {
     id: row.id,
@@ -138,6 +149,9 @@ export function mapMessage(row: {
     createdAt: row.created_at,
     isPinned: row.is_pinned ?? false,
     editedAt: row.edited_at ?? null,
+    attachmentUrl: row.attachment_url ?? null,
+    attachmentName: row.attachment_name ?? null,
+    attachmentType: (row.attachment_type as Message["attachmentType"]) ?? null,
   };
 }
 
