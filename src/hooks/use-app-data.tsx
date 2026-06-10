@@ -22,8 +22,11 @@ import {
   createProject,
   createTask,
   deleteProject,
+  fetchPendingInvites,
   fetchWorkspaceData,
+  inviteTeamMember,
   markNotificationsRead,
+  removeTeamMember,
   sendMessage,
   updateProfile,
   updateProject,
@@ -32,13 +35,15 @@ import {
 import { useAuth } from "./use-auth";
 import { useBoardStore } from "@/lib/board-store";
 
-type Workspace = { id: string; name: string; plan: string; memberCount: number };
+type Workspace = { id: string; name: string; plan: string; memberCount: number; ownerId: string };
 
 type AppDataContextValue = {
   loading: boolean;
   workspace: Workspace | null;
   me: User | null;
+  isOwner: boolean;
   team: User[];
+  pendingInvites: { id: string; email: string; created_at: string }[];
   projects: Project[];
   tasks: Task[];
   activities: Activity[];
@@ -51,6 +56,7 @@ type AppDataContextValue = {
     status?: ProjectStatus;
     priority?: Priority;
     dueDate?: string;
+    memberIds?: string[];
   }) => Promise<void>;
   updateProject: (
     projectId: string,
@@ -60,9 +66,12 @@ type AppDataContextValue = {
       status?: ProjectStatus;
       priority?: Priority;
       dueDate?: string | null;
+      memberIds?: string[];
     },
   ) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
+  inviteMember: (email: string) => Promise<void>;
+  removeMember: (userId: string) => Promise<void>;
   createTask: (projectId: string, title: string) => Promise<void>;
   moveTask: (taskId: string, toStatus: TaskStatus, toIndex: number) => Promise<void>;
   sendProjectMessage: (projectId: string, body: string) => Promise<void>;
@@ -77,7 +86,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [me, setMe] = useState<User | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
   const [team, setTeam] = useState<User[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<{ id: string; email: string; created_at: string }[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -92,12 +103,20 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       const data = await fetchWorkspaceData(user.id);
       setWorkspace(data.workspace);
       setMe(data.me);
+      setIsOwner(data.isOwner);
       setTeam(data.team);
       setProjects(data.projects);
       setTasks(data.tasks);
       setActivities(data.activities);
       setNotifications(data.notifications);
       setBoardTasks(data.tasks);
+
+      if (data.isOwner) {
+        const invites = await fetchPendingInvites(data.workspace.id);
+        setPendingInvites(invites);
+      } else {
+        setPendingInvites([]);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to load workspace");
     } finally {
@@ -111,7 +130,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     else {
       setWorkspace(null);
       setMe(null);
+      setIsOwner(false);
       setTeam([]);
+      setPendingInvites([]);
       setProjects([]);
       setTasks([]);
       setBoardTasks([]);
@@ -129,6 +150,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     status?: ProjectStatus;
     priority?: Priority;
     dueDate?: string;
+    memberIds?: string[];
   }) => {
     if (!user || !workspace) return;
     const project = await createProject(workspace.id, user.id, input);
@@ -144,6 +166,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       status?: ProjectStatus;
       priority?: Priority;
       dueDate?: string | null;
+      memberIds?: string[];
     },
   ) => {
     await updateProject(projectId, input);
@@ -156,6 +179,24 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     setProjects((p) => p.filter((x) => x.id !== projectId));
     setTasks((t) => t.filter((x) => x.projectId !== projectId));
     toast.success("Project deleted");
+  };
+
+  const handleInviteMember = async (email: string) => {
+    if (!user || !workspace) return;
+    const result = await inviteTeamMember(workspace.id, email, user.id);
+    await refresh();
+    toast.success(
+      result.type === "added"
+        ? "Team member added to workspace"
+        : "Invite sent — they can sign up once with this email",
+    );
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    if (!workspace) return;
+    await removeTeamMember(workspace.id, userId, workspace.ownerId);
+    await refresh();
+    toast.success("Team member removed");
   };
 
   const handleCreateTask = async (projectId: string, title: string) => {
@@ -209,7 +250,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       loading: authLoading || loading,
       workspace,
       me,
+      isOwner,
       team,
+      pendingInvites,
       projects,
       tasks,
       activities,
@@ -219,6 +262,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       createProject: handleCreateProject,
       updateProject: handleUpdateProject,
       deleteProject: handleDeleteProject,
+      inviteMember: handleInviteMember,
+      removeMember: handleRemoveMember,
       createTask: handleCreateTask,
       moveTask: handleMoveTask,
       sendProjectMessage: handleSendMessage,
@@ -230,7 +275,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       loading,
       workspace,
       me,
+      isOwner,
       team,
+      pendingInvites,
       projects,
       tasks,
       activities,
@@ -249,7 +296,6 @@ export function useAppData() {
   return ctx;
 }
 
-/** Use in components that work with or without login (demo fallback). */
 export function useAppDataOptional() {
   return useContext(AppDataContext);
 }

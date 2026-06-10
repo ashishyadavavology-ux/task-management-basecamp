@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -17,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Priority, Project, ProjectStatus } from "@/lib/types";
+import type { Priority, Project, ProjectStatus, User } from "@/lib/types";
 
 type ProjectInput = {
   name: string;
@@ -25,17 +26,20 @@ type ProjectInput = {
   status?: ProjectStatus;
   priority?: Priority;
   dueDate?: string;
+  memberIds?: string[];
 };
 
 export function ProjectFormDialog({
   open,
   onOpenChange,
   project,
+  team,
   onSubmit,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   project?: Project | null;
+  team: User[];
   onSubmit: (input: ProjectInput) => Promise<void>;
 }) {
   const [name, setName] = useState("");
@@ -43,6 +47,7 @@ export function ProjectFormDialog({
   const [status, setStatus] = useState<ProjectStatus>("planning");
   const [priority, setPriority] = useState<Priority>("medium");
   const [dueDate, setDueDate] = useState("");
+  const [memberIds, setMemberIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -52,8 +57,15 @@ export function ProjectFormDialog({
       setStatus(project?.status || "planning");
       setPriority(project?.priority || "medium");
       setDueDate(project?.dueDate?.slice(0, 10) || "");
+      setMemberIds(project?.memberIds || []);
     }
   }, [open, project]);
+
+  const toggleMember = (id: string) => {
+    setMemberIds((ids) =>
+      ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id],
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +78,7 @@ export function ProjectFormDialog({
         status,
         priority,
         dueDate: dueDate || undefined,
+        memberIds,
       });
       onOpenChange(false);
     } finally {
@@ -138,6 +151,21 @@ export function ProjectFormDialog({
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Assign team members</Label>
+            <div className="max-h-36 space-y-2 overflow-y-auto rounded-xl border p-3">
+              {team.map((u) => (
+                <label key={u.id} className="flex cursor-pointer items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={memberIds.includes(u.id)}
+                    onCheckedChange={() => toggleMember(u.id)}
+                  />
+                  <span>{u.name}</span>
+                  <span className="text-muted-foreground">({u.email})</span>
+                </label>
+              ))}
+            </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

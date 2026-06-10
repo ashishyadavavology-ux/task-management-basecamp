@@ -35,7 +35,7 @@ export const Route = createFileRoute("/projects")({
 });
 
 function Projects() {
-  const { projects, userById, createProject, updateProject, deleteProject } = useAppData();
+  const { projects, userById, team, isOwner, createProject, updateProject, deleteProject } = useAppData();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Project | null>(null);
   const [deleting, setDeleting] = useState<Project | null>(null);
@@ -56,6 +56,7 @@ function Projects() {
     status?: Project["status"];
     priority?: Project["priority"];
     dueDate?: string;
+    memberIds?: string[];
   }) => {
     if (editing) {
       await updateProject(editing.id, input);
@@ -71,7 +72,10 @@ function Projects() {
   };
 
   return (
-    <AppShell title="Projects" action={<PageHeaderAction label="New project" onClick={handleNew} />}>
+    <AppShell
+      title="Projects"
+      action={isOwner ? <PageHeaderAction label="New project" onClick={handleNew} /> : undefined}
+    >
       <div className="mx-auto max-w-7xl space-y-6">
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-primary">Workspace</p>
@@ -79,30 +83,34 @@ function Projects() {
         </div>
         {projects.length === 0 ? (
           <Card className="rounded-2xl border-2 border-dashed p-12 text-center">
-            <p className="text-muted-foreground">No projects yet. Create your first one!</p>
+            <p className="text-muted-foreground">
+              {isOwner ? "No projects yet. Create your first one!" : "No projects assigned to you yet."}
+            </p>
           </Card>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((p, i) => (
               <motion.div key={p.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                 <Card className="relative h-full gap-3 rounded-2xl border-2 p-5 transition-all hover:-translate-y-0.5 hover:border-primary/15 hover:shadow-[var(--shadow-card)]">
-                  <div className="absolute right-3 top-3">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.preventDefault()}>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEdit(p)}>
-                          <Pencil className="mr-2 h-4 w-4" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => setDeleting(p)}>
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                  {isOwner && (
+                    <div className="absolute right-3 top-3">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.preventDefault()}>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEdit(p)}>
+                            <Pencil className="mr-2 h-4 w-4" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => setDeleting(p)}>
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )}
                   <Link to="/projects/$projectId" params={{ projectId: p.id }} className="block">
                     <div className="flex items-start justify-between pr-8">
                       <div className="flex items-center gap-2.5">
@@ -138,12 +146,15 @@ function Projects() {
         )}
       </div>
 
-      <ProjectFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        project={editing}
-        onSubmit={handleSubmit}
-      />
+      {isOwner && (
+        <ProjectFormDialog
+          open={formOpen}
+          onOpenChange={setFormOpen}
+          project={editing}
+          team={team}
+          onSubmit={handleSubmit}
+        />
+      )}
 
       <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <AlertDialogContent>

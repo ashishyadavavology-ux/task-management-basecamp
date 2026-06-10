@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { isWorkspaceOwner, normalizeEmail, OWNER_EMAIL } from "@/lib/permissions";
 import type { Priority, ProjectStatus, TaskStatus } from "@/lib/types";
 import {
   mapActivity,
@@ -10,7 +11,15 @@ import {
   sanitizeBrandText,
 } from "./mappers";
 
-export async function ensureWorkspace(userId: string, userName?: string) {
+export async function canSignUpWithEmail(email: string) {
+  const { data, error } = await supabase.rpc("can_signup_with_email", {
+    check_email: normalizeEmail(email),
+  });
+  if (error) throw error;
+  return Boolean(data);
+}
+
+export async function ensureWorkspace(userId: string) {
   const { data: existing } = await supabase
     .from("workspace_members")
     .select("workspace_id, workspaces(id, name, plan, owner_id)")
@@ -19,26 +28,21 @@ export async function ensureWorkspace(userId: string, userName?: string) {
     .maybeSingle();
 
   if (existing?.workspaces) {
-    const ws = existing.workspaces as { id: string; name: string; plan: string | null };
-    return { id: ws.id, name: sanitizeBrandText(ws.name), plan: ws.plan || "Starter" };
+    const ws = existing.workspaces as {
+      id: string;
+      name: string;
+      plan: string | null;
+      owner_id: string;
+    };
+    return {
+      id: ws.id,
+      name: sanitizeBrandText(ws.name),
+      plan: ws.plan || "Starter",
+      ownerId: ws.owner_id,
+    };
   }
 
-  const name = `${userName?.trim() || "My"}'s Workspace`;
-  const { data: workspace, error } = await supabase
-    .from("workspaces")
-    .insert({ name, owner_id: userId })
-    .select("id, name, plan")
-    .single();
-
-  if (error) throw error;
-
-  await supabase.from("workspace_members").insert({
-    workspace_id: workspace.id,
-    user_id: userId,
-    role: "admin",
-  });
-
-  return workspace;
+  throw new Error("You are not in a workspace. Ask Ashish (admin) to invite you.");
 }
 
 export async function fetchWorkspaceData(userId: string) {
@@ -115,7 +119,7 @@ export async function fetchWorkspaceData(userId: string) {
 
   const notifications = (notificationRows || []).map(mapNotification);
 
-  const me = team.find((u) => u.id === userId) || mapProfile({
+  let me = team.find((u) => u.id === userId) || mapProfile({
     id: userId,
     full_name: "You",
     email: "",
@@ -123,12 +127,23 @@ export async function fetchWorkspaceData(userId: string) {
     avatar_color: null,
   });
 
+  const isOwner = isWorkspaceOwner(userId, workspace.ownerId, me.email);
+  if (isOwner) me = { ...me, role: "admin" };
+
+  const visibleProjects = isOwner
+    ? projects
+    : projects.filter((p) => p.memberIds.includes(userId));
+
+  const visibleProjectIds = new Set(visibleProjects.map((p) => p.id));
+  const visibleTasks = tasks.filter((t) => visibleProjectIds.has(t.projectId));
+
   return {
-    workspace: { ...workspace, memberCount: team.length },
+    workspace: { ...workspace, memberCount: team.length, ownerId: workspace.ownerId },
     me,
+    isOwner,
     team,
-    projects,
-    tasks,
+    projects: visibleProjects,
+    tasks: visibleTasks,
     activities,
     notifications,
   };
@@ -143,6 +158,7 @@ export async function createProject(
     status?: ProjectStatus;
     priority?: Priority;
     dueDate?: string;
+    memberIds?: string[];
   },
 ) {
   const { data, error } = await supabase
@@ -161,10 +177,10 @@ export async function createProject(
 
   if (error) throw error;
 
-  await supabase.from("project_members").insert({
-    project_id: data.id,
-    user_id: userId,
-  });
+  const memberIds = [...new Set([userId, ...(input.memberIds || [])])];
+  await supabase.from("project_members").insert(
+    memberIds.map((uid) => ({ project_id: data.id, user_id: uid })),
+  );
 
   await supabase.from("activities").insert({
     project_id: data.id,
@@ -173,7 +189,83 @@ export async function createProject(
     target: input.name,
   });
 
-  return mapProject(data, [userId]);
+  return mapProject(data, memberIds);
+}
+
+export async function setProjectMembers(projectId: string, memberIds: string[]) {
+  await supabase.from("project_members").delete().eq("project_id", projectId);
+  if (memberIds.length) {
+    const { error } = await supabase.from("project_members").insert(
+      memberIds.map((user_id) => ({ project_id: projectId, user_id })),
+    );
+    if (error) throw error;
+  }
+}
+
+export async function inviteTeamMember(workspaceId: string, email: string, invitedBy: string) {
+  const normalized = normalizeEmail(email);
+  if (normalized === normalizeEmail(OWNER_EMAIL)) {
+    throw new Error("Owner is already the admin.");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("email", normalized)
+    .maybeSingle();
+
+  if (profile?.id) {
+    const { error } = await supabase.from("workspace_members").upsert({
+      workspace_id: workspaceId,
+      user_id: profile.id,
+      role: "member",
+    });
+    if (error) throw error;
+    return { type: "added" as const };
+  }
+
+  const { error } = await supabase.from("workspace_invites").upsert({
+    workspace_id: workspaceId,
+    email: normalized,
+    invited_by: invitedBy,
+  });
+  if (error) throw error;
+  return { type: "invited" as const };
+}
+
+export async function removeTeamMember(workspaceId: string, userId: string, ownerId: string) {
+  if (userId === ownerId) throw new Error("Cannot remove the workspace owner.");
+
+  const { error } = await supabase
+    .from("workspace_members")
+    .delete()
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", userId);
+  if (error) throw error;
+
+  const { data: projects } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("workspace_id", workspaceId);
+
+  const projectIds = (projects || []).map((p) => p.id);
+  if (projectIds.length) {
+    await supabase
+      .from("project_members")
+      .delete()
+      .eq("user_id", userId)
+      .in("project_id", projectIds);
+  }
+}
+
+export async function fetchPendingInvites(workspaceId: string) {
+  const { data, error } = await supabase
+    .from("workspace_invites")
+    .select("id, email, created_at")
+    .eq("workspace_id", workspaceId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
 }
 
 export async function createTask(
@@ -330,6 +422,7 @@ export async function updateProject(
     status?: ProjectStatus;
     priority?: Priority;
     dueDate?: string | null;
+    memberIds?: string[];
   },
 ) {
   const dbPatch: Record<string, unknown> = {};
@@ -346,6 +439,11 @@ export async function updateProject(
     .select()
     .single();
   if (error) throw error;
+
+  if (input.memberIds !== undefined) {
+    await setProjectMembers(projectId, input.memberIds);
+  }
+
   return data;
 }
 

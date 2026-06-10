@@ -44,7 +44,7 @@ const settingsNav = [
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
-  const { me, workspace } = useAppData();
+  const { me, workspace, isOwner } = useAppData();
   const { signOut } = useAuth();
   const isActive = (url: string) => pathname === url || pathname.startsWith(url + "/");
 
@@ -91,7 +91,9 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {settingsNav.map((item) => (
+              {settingsNav
+                .filter((item) => item.url !== "/admin" || isOwner)
+                .map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
@@ -132,7 +134,9 @@ export function AppSidebar() {
           <UserAvatar user={me} size="sm" />
           <div className="flex min-w-0 flex-col leading-tight group-data-[collapsible=icon]:hidden">
             <span className="truncate text-sm font-semibold">{me?.name}</span>
-            <span className="truncate text-xs capitalize text-muted-foreground">{me?.role}</span>
+            <span className="truncate text-xs capitalize text-muted-foreground">
+              {isOwner ? "owner · admin" : me?.role}
+            </span>
           </div>
         </Link>
       </SidebarFooter>

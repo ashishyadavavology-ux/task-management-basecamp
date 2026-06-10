@@ -16,6 +16,8 @@ import {
 } from "@/integrations/supabase/client";
 import { BrandLogo } from "@/components/brand-logo";
 import { AlertCircle } from "lucide-react";
+import { canSignUpWithEmail } from "@/lib/supabase/api";
+import { OWNER_EMAIL } from "@/lib/permissions";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -64,6 +66,21 @@ function AuthPage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    try {
+      const allowed = await canSignUpWithEmail(form.email.trim());
+      if (!allowed) {
+        setLoading(false);
+        toast.error(
+          "Sign up is invite-only. Ask Ashish (admin) to add your email, or use Sign in if you already registered.",
+        );
+        return;
+      }
+    } catch {
+      setLoading(false);
+      toast.error("Could not verify signup permission. Try again.");
+      return;
+    }
 
     const { data, error } = await supabase.auth.signUp({
       email: form.email.trim(),
@@ -196,10 +213,23 @@ function AuthPage() {
               </div>
 
               <Tabs value={authTab} onValueChange={(v) => setAuthTab(v as "signin" | "signup")}>
-                <TabsList className="grid w-full grid-cols-2 rounded-xl bg-muted p-1">
-                  <TabsTrigger value="signin" className="rounded-lg">Sign in</TabsTrigger>
-                  <TabsTrigger value="signup" className="rounded-lg">Sign up</TabsTrigger>
-                </TabsList>
+                {authTab === "signup" ? (
+                  <TabsList className="grid w-full grid-cols-2 rounded-xl bg-muted p-1">
+                    <TabsTrigger value="signin" className="rounded-lg">Sign in</TabsTrigger>
+                    <TabsTrigger value="signup" className="rounded-lg">Sign up</TabsTrigger>
+                  </TabsList>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Sign in to your account</p>
+                    <button
+                      type="button"
+                      onClick={() => setAuthTab("signup")}
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      Invited? Sign up once
+                    </button>
+                  </div>
+                )}
 
                 <TabsContent value="signin">
                   <form onSubmit={handleSignIn} className="space-y-4 pt-3">
@@ -227,7 +257,7 @@ function AuthPage() {
               </Tabs>
 
               <p className="text-center text-xs text-muted-foreground">
-                Sign up first, then use Sign in to access your workspace.
+                Admin: {OWNER_EMAIL} · Team members sign up once when invited, then sign in only.
               </p>
             </Card>
           )}
