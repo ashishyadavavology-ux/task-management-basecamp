@@ -69,5 +69,8 @@ export function formatAuthError(message: string): string {
   if (lower.includes("invalid login credentials")) {
     return "Wrong email or password. Sign up first if you don’t have an account.";
   }
+  if (lower.includes("email not confirmed") || lower.includes("email_not_confirmed")) {
+    return "Email verification is still on. In Supabase: Authentication → Providers → Email → turn OFF “Confirm email”, then sign up again.";
+  }
   return message;
 }

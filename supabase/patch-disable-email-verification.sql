@@ -1,0 +1,16 @@
+-- ============================================================================
+-- Basecamp — Disable email verification (signup without confirm link)
+--
+-- ⚠️ Email confirmation is NOT controlled by SQL.
+-- Run these steps in Supabase Dashboard (one time):
+--
+-- 1. Authentication → Providers → Email
+-- 2. Turn OFF  "Confirm email"
+-- 3. Save
+--
+-- Optional: Authentication → URL Configuration
+--    • Site URL = your app URL (e.g. http://localhost:5173)
+--    • Redirect URLs = same + production URL
+--
+-- After this, anyone can Sign up → login immediately (no verification email).
+-- ============================================================================

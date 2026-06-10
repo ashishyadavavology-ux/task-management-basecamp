@@ -42,6 +42,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<"signin" | "forgot">("signin");
+  const [authTab, setAuthTab] = useState<"signin" | "signup">("signin");
   const [form, setForm] = useState({ name: "", email: "", password: "" });
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -63,22 +64,27 @@ function AuthPage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
     const { data, error } = await supabase.auth.signUp({
-      email: form.email,
+      email: form.email.trim(),
       password: form.password,
-      options: {
-        data: { full_name: form.name },
-        emailRedirectTo: window.location.origin + "/dashboard",
-      },
+      options: { data: { full_name: form.name.trim() } },
     });
-    setLoading(false);
-    if (error) return toast.error(formatAuthError(error.message));
-    if (data.session) {
-      toast.success("Account created!");
-      navigate({ to: "/dashboard" });
-      return;
+
+    if (error) {
+      setLoading(false);
+      return toast.error(formatAuthError(error.message));
     }
-    toast.success("Account created! Check your email to confirm, or ask admin to disable email confirmation in Supabase.");
+
+    // Account created — don't stay logged in; user signs in from Sign in tab
+    if (data.session) {
+      await supabase.auth.signOut();
+    }
+
+    setLoading(false);
+    setForm((f) => ({ ...f, name: "", password: "" }));
+    setAuthTab("signin");
+    toast.success("Account created! Now sign in with your email and password.");
   };
 
   const handleGoogle = async () => {
@@ -189,7 +195,7 @@ function AuthPage() {
                 <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
               </div>
 
-              <Tabs defaultValue="signin">
+              <Tabs value={authTab} onValueChange={(v) => setAuthTab(v as "signin" | "signup")}>
                 <TabsList className="grid w-full grid-cols-2 rounded-xl bg-muted p-1">
                   <TabsTrigger value="signin" className="rounded-lg">Sign in</TabsTrigger>
                   <TabsTrigger value="signup" className="rounded-lg">Sign up</TabsTrigger>
@@ -221,7 +227,7 @@ function AuthPage() {
               </Tabs>
 
               <p className="text-center text-xs text-muted-foreground">
-                By signing up you get your own workspace with projects &amp; tasks.
+                Sign up first, then use Sign in to access your workspace.
               </p>
             </Card>
           )}
