@@ -19,11 +19,11 @@ import { BrandLogo } from "@/components/brand-logo";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Hearth — Project management for modern teams" },
+      { title: "Basecamp — Project management for modern teams" },
       {
         name: "description",
         content:
-          "Hearth is a calm, warm workspace for teams — kanban boards, real-time chat, calendars, and collaboration without the chaos.",
+          "Basecamp is a calm, warm workspace for teams — kanban boards, real-time chat, calendars, and collaboration without the chaos.",
       },
     ],
   }),
@@ -95,7 +95,7 @@ function Landing() {
             </h1>
 
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-muted-foreground">
-              Hearth is the calm home for your team's work — boards, chat, calendars, and deadlines
+              Basecamp is the calm home for your team's work — boards, chat, calendars, and deadlines
               in one warm workspace. No clutter. No learning curve. Just get things done.
             </p>
 
@@ -167,7 +167,7 @@ function Landing() {
               Everything you need.<br />Nothing you don't.
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              We built Hearth for teams who are tired of bloated tools. Simple, focused, and actually pleasant to use.
+              We built Basecamp for teams who are tired of bloated tools. Simple, focused, and actually pleasant to use.
             </p>
           </div>
 
@@ -273,7 +273,7 @@ function Landing() {
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-10 text-sm text-muted-foreground sm:flex-row">
           <BrandLogo size="sm" />
           <span>Built for teams that ship — not teams that sit in meetings.</span>
-          <span>© {new Date().getFullYear()} Hearth</span>
+          <span>© {new Date().getFullYear()} Basecamp</span>
         </div>
       </footer>
     </div>

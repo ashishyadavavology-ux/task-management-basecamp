@@ -135,6 +135,8 @@ create table if not exists public.messages (
   project_id uuid not null references public.projects(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
   body text not null,
+  is_pinned boolean not null default false,
+  edited_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -287,10 +289,17 @@ create policy "members access attachments" on public.attachments for all
 
 drop policy if exists "members access messages" on public.messages;
 drop policy if exists "members send messages" on public.messages;
+drop policy if exists "members update messages" on public.messages;
+drop policy if exists "members delete messages" on public.messages;
 create policy "members access messages" on public.messages for select
   using (public.is_project_member(project_id, auth.uid()));
 create policy "members send messages" on public.messages for insert
   with check (user_id = auth.uid() and public.is_project_member(project_id, auth.uid()));
+create policy "members update messages" on public.messages for update
+  using (public.is_project_member(project_id, auth.uid()))
+  with check (public.is_project_member(project_id, auth.uid()));
+create policy "members delete messages" on public.messages for delete
+  using (user_id = auth.uid() and public.is_project_member(project_id, auth.uid()));
 
 drop policy if exists "members read activities" on public.activities;
 drop policy if exists "log activities" on public.activities;

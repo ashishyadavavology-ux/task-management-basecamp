@@ -127,6 +127,8 @@ export function mapMessage(row: {
   user_id: string;
   body: string;
   created_at: string;
+  is_pinned?: boolean;
+  edited_at?: string | null;
 }): Message {
   return {
     id: row.id,
@@ -134,6 +136,8 @@ export function mapMessage(row: {
     userId: row.user_id,
     body: row.body,
     createdAt: row.created_at,
+    isPinned: row.is_pinned ?? false,
+    editedAt: row.edited_at ?? null,
   };
 }
 

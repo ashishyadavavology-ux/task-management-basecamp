@@ -12,7 +12,7 @@ import { useAppData } from "@/hooks/use-app-data";
 import { useBoardStore } from "@/lib/board-store";
 
 export const Route = createFileRoute("/projects/$projectId")({
-  head: () => ({ meta: [{ title: "Board — Hearth" }] }),
+  head: () => ({ meta: [{ title: "Board — Basecamp" }] }),
   component: ProjectDetail,
   notFoundComponent: () => (
     <div className="p-10 text-center">

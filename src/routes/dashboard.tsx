@@ -25,7 +25,7 @@ import { useAppData } from "@/hooks/use-app-data";
 import { format } from "date-fns";
 
 export const Route = createFileRoute("/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — Hearth" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — Basecamp" }] }),
   component: Dashboard,
 });
 

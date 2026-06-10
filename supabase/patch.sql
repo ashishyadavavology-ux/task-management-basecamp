@@ -164,6 +164,18 @@ drop policy if exists "update own notifications" on public.notifications;
 create policy "read own notifications" on public.notifications for select using (auth.uid() = user_id);
 create policy "update own notifications" on public.notifications for update using (auth.uid() = user_id);
 
+-- Message enhancements: pin + edit
+alter table public.messages add column if not exists is_pinned boolean not null default false;
+alter table public.messages add column if not exists edited_at timestamptz;
+
+drop policy if exists "members update messages" on public.messages;
+drop policy if exists "members delete messages" on public.messages;
+create policy "members update messages" on public.messages for update
+  using (public.is_project_member(project_id, auth.uid()))
+  with check (public.is_project_member(project_id, auth.uid()));
+create policy "members delete messages" on public.messages for delete
+  using (user_id = auth.uid() and public.is_project_member(project_id, auth.uid()));
+
 -- Realtime (ignore if already added)
 do $$ begin alter publication supabase_realtime add table public.tasks; exception when others then null; end $$;
 do $$ begin alter publication supabase_realtime add table public.messages; exception when others then null; end $$;

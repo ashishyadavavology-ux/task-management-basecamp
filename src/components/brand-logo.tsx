@@ -24,10 +24,10 @@ export function BrandLogo({
           s.icon,
         )}
       >
-        H
+        B
       </div>
       {showText && (
-        <span className={cn("font-display font-semibold tracking-tight", s.text)}>Hearth</span>
+        <span className={cn("font-display font-semibold tracking-tight", s.text)}>Basecamp</span>
       )}
     </div>
   );

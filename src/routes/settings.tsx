@@ -12,7 +12,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { useAppData } from "@/hooks/use-app-data";
 
 export const Route = createFileRoute("/settings")({
-  head: () => ({ meta: [{ title: "Settings — Hearth" }] }),
+  head: () => ({ meta: [{ title: "Settings — Basecamp" }] }),
   component: Settings,
 });
 

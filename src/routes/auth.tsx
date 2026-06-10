@@ -20,8 +20,8 @@ import { AlertCircle } from "lucide-react";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — Hearth" },
-      { name: "description", content: "Sign in or create your Hearth account." },
+      { title: "Sign in — Basecamp" },
+      { name: "description", content: "Sign in or create your Basecamp Project Management account." },
     ],
   }),
   component: AuthPage,
@@ -121,13 +121,13 @@ function AuthPage() {
               A
             </div>
             <div>
-              <p className="text-sm font-semibold">Aanya Sharma</p>
-              <p className="text-sm text-primary-foreground/70">Founder, Northwind Studio</p>
+              <p className="text-sm font-semibold">Ashis</p>
+              <p className="text-sm text-primary-foreground/70">Basecamp Project Management</p>
             </div>
           </div>
         </div>
 
-        <p className="relative text-sm text-primary-foreground/60">© {new Date().getFullYear()} Hearth</p>
+        <p className="relative text-sm text-primary-foreground/60">© {new Date().getFullYear()} Basecamp Project Management</p>
       </div>
 
       <div className="flex items-center justify-center bg-background p-6 paper-texture">

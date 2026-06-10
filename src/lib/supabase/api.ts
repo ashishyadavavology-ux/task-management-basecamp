@@ -255,6 +255,65 @@ export async function sendMessage(projectId: string, userId: string, body: strin
   return mapMessage(data);
 }
 
+export async function updateMessage(messageId: string, body: string) {
+  const { data, error } = await supabase
+    .from("messages")
+    .update({ body, edited_at: new Date().toISOString() })
+    .eq("id", messageId)
+    .select()
+    .single();
+  if (error) throw error;
+  return mapMessage(data);
+}
+
+export async function deleteMessage(messageId: string) {
+  const { error } = await supabase.from("messages").delete().eq("id", messageId);
+  if (error) throw error;
+}
+
+export async function toggleMessagePin(messageId: string, isPinned: boolean) {
+  const { data, error } = await supabase
+    .from("messages")
+    .update({ is_pinned: isPinned })
+    .eq("id", messageId)
+    .select()
+    .single();
+  if (error) throw error;
+  return mapMessage(data);
+}
+
+export async function updateProject(
+  projectId: string,
+  input: {
+    name?: string;
+    description?: string;
+    status?: ProjectStatus;
+    priority?: Priority;
+    dueDate?: string | null;
+  },
+) {
+  const dbPatch: Record<string, unknown> = {};
+  if (input.name !== undefined) dbPatch.name = input.name;
+  if (input.description !== undefined) dbPatch.description = input.description;
+  if (input.status !== undefined) dbPatch.status = input.status;
+  if (input.priority !== undefined) dbPatch.priority = input.priority;
+  if (input.dueDate !== undefined) dbPatch.due_date = input.dueDate;
+
+  const { data, error } = await supabase
+    .from("projects")
+    .update(dbPatch)
+    .eq("id", projectId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteProject(projectId: string) {
+  const { error } = await supabase.from("projects").delete().eq("id", projectId);
+  if (error) throw error;
+}
+
 export async function updateProfile(
   userId: string,
   patch: { full_name?: string; title?: string },

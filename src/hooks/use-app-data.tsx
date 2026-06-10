@@ -21,10 +21,12 @@ import type {
 import {
   createProject,
   createTask,
+  deleteProject,
   fetchWorkspaceData,
   markNotificationsRead,
   sendMessage,
   updateProfile,
+  updateProject,
   updateTaskInDb,
 } from "@/lib/supabase/api";
 import { useAuth } from "./use-auth";
@@ -50,6 +52,17 @@ type AppDataContextValue = {
     priority?: Priority;
     dueDate?: string;
   }) => Promise<void>;
+  updateProject: (
+    projectId: string,
+    input: {
+      name?: string;
+      description?: string;
+      status?: ProjectStatus;
+      priority?: Priority;
+      dueDate?: string | null;
+    },
+  ) => Promise<void>;
+  deleteProject: (projectId: string) => Promise<void>;
   createTask: (projectId: string, title: string) => Promise<void>;
   moveTask: (taskId: string, toStatus: TaskStatus, toIndex: number) => Promise<void>;
   sendProjectMessage: (projectId: string, body: string) => Promise<void>;
@@ -123,6 +136,28 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     toast.success("Project created");
   };
 
+  const handleUpdateProject = async (
+    projectId: string,
+    input: {
+      name?: string;
+      description?: string;
+      status?: ProjectStatus;
+      priority?: Priority;
+      dueDate?: string | null;
+    },
+  ) => {
+    await updateProject(projectId, input);
+    await refresh();
+    toast.success("Project updated");
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    await deleteProject(projectId);
+    setProjects((p) => p.filter((x) => x.id !== projectId));
+    setTasks((t) => t.filter((x) => x.projectId !== projectId));
+    toast.success("Project deleted");
+  };
+
   const handleCreateTask = async (projectId: string, title: string) => {
     if (!user) return;
     const task = await createTask(projectId, user.id, { title });
@@ -182,6 +217,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       userById,
       refresh,
       createProject: handleCreateProject,
+      updateProject: handleUpdateProject,
+      deleteProject: handleDeleteProject,
       createTask: handleCreateTask,
       moveTask: handleMoveTask,
       sendProjectMessage: handleSendMessage,

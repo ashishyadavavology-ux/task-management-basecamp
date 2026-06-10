@@ -65,6 +65,8 @@ export interface Message {
   userId: string;
   body: string;
   createdAt: string;
+  isPinned: boolean;
+  editedAt: string | null;
 }
 
 export interface Notification {

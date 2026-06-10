@@ -8,7 +8,7 @@ import { useAppData } from "@/hooks/use-app-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/notifications")({
-  head: () => ({ meta: [{ title: "Notifications — Hearth" }] }),
+  head: () => ({ meta: [{ title: "Notifications — Basecamp" }] }),
   component: Notifications,
 });
 

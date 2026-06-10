@@ -7,7 +7,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { useAppData } from "@/hooks/use-app-data";
 
 export const Route = createFileRoute("/team")({
-  head: () => ({ meta: [{ title: "Team — Hearth" }] }),
+  head: () => ({ meta: [{ title: "Team — Basecamp" }] }),
   component: Team,
 });
 

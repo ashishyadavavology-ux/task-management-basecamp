@@ -9,7 +9,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { users, projects, workspace } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Admin Panel — Hearth" }] }),
+  head: () => ({ meta: [{ title: "Admin Panel — Basecamp" }] }),
   component: Admin,
 });
 

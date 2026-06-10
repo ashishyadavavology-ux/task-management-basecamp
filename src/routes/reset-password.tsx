@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/reset-password")({
-  head: () => ({ meta: [{ title: "Set a new password — Hearth" }] }),
+  head: () => ({ meta: [{ title: "Set a new password — Basecamp" }] }),
   component: ResetPassword,
 });
 
@@ -33,7 +33,7 @@ function ResetPassword() {
       <Card className="w-full max-w-sm gap-5 p-6">
         <Link to="/" className="flex items-center gap-2">
           <Flame className="h-5 w-5 text-primary" />
-          <span className="font-display text-lg font-semibold">Hearth</span>
+          <span className="font-display text-lg font-semibold">Basecamp</span>
         </Link>
         <div>
           <h1 className="font-display text-2xl font-semibold">Set a new password</h1>

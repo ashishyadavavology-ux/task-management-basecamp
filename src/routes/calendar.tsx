@@ -12,7 +12,7 @@ import { useAppData } from "@/hooks/use-app-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/calendar")({
-  head: () => ({ meta: [{ title: "Calendar — Hearth" }] }),
+  head: () => ({ meta: [{ title: "Calendar — Basecamp" }] }),
   component: CalendarPage,
 });
 
