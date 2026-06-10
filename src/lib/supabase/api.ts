@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { createEphemeralClient, supabase } from "@/integrations/supabase/client";
 import { isWorkspaceOwner, normalizeEmail, OWNER_EMAIL } from "@/lib/permissions";
 import type { Priority, ProjectStatus, TaskStatus } from "@/lib/types";
 import {
@@ -249,7 +249,9 @@ export async function createMemberAsOwner(
     { onConflict: "workspace_id,email" },
   );
 
-  const { data, error } = await supabase.auth.signUp({
+  // Ephemeral client — signUp won't log out the admin
+  const ephemeral = createEphemeralClient();
+  const { data, error } = await ephemeral.auth.signUp({
     email: normalized,
     password: input.password,
     options: {
@@ -271,15 +273,6 @@ export async function createMemberAsOwner(
 
   const newUserId = data.user?.id;
   if (!newUserId) throw new Error("Could not create member account.");
-
-  await supabase.auth.signOut();
-  const { error: restoreError } = await supabase.auth.setSession({
-    access_token: adminSession.access_token,
-    refresh_token: adminSession.refresh_token,
-  });
-  if (restoreError) {
-    throw new Error("Member created but admin session expired — please sign in again.");
-  }
 
   await supabase.from("workspace_members").upsert(
     { workspace_id: workspaceId, user_id: newUserId, role: "member" as const },

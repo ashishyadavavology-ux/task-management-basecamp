@@ -26,9 +26,12 @@ export function AppShell({
   const { loading: dataLoading } = useAppData();
 
   useEffect(() => {
-    if (requireAuth && !authLoading && !user) {
-      navigate({ to: "/auth" });
-    }
+    if (!requireAuth || authLoading || user) return;
+    // Brief delay avoids redirect flash during admin actions (e.g. adding team member)
+    const t = window.setTimeout(() => {
+      if (!user) navigate({ to: "/auth" });
+    }, 400);
+    return () => window.clearTimeout(t);
   }, [requireAuth, authLoading, user, navigate]);
 
   if (requireAuth && (authLoading || dataLoading || !user)) {

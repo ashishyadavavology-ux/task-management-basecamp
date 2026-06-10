@@ -9,6 +9,20 @@ export const supabaseUrl = readEnv("VITE_SUPABASE_URL");
 export const supabaseAnonKey =
   readEnv("VITE_SUPABASE_ANON_KEY") || readEnv("VITE_SUPABASE_PUBLISHABLE_KEY");
 
+/** Separate client for admin actions that must not touch the logged-in session. */
+export function createEphemeralClient(): SupabaseClient {
+  if (!isSupabaseConfigured) {
+    throw new Error(supabaseConfigError ?? "Supabase is not configured");
+  }
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
+}
+
 export const supabaseConfigError = (() => {
   if (!supabaseUrl) {
     return "Missing VITE_SUPABASE_URL in .env — copy Project URL from Supabase → Settings → API.";

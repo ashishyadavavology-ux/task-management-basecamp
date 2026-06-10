@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { UserAvatar } from "@/components/user-avatar";
 import type { Priority, Project, ProjectStatus, User } from "@/lib/types";
 
 type ProjectInput = {
@@ -88,7 +89,7 @@ export function ProjectFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{project ? "Edit project" : "New project"}</DialogTitle>
         </DialogHeader>
@@ -154,15 +155,23 @@ export function ProjectFormDialog({
           </div>
           <div className="space-y-2">
             <Label>Assign team members</Label>
-            <div className="max-h-36 space-y-2 overflow-y-auto rounded-xl border p-3">
+            <div className="max-h-40 space-y-1 overflow-y-auto rounded-xl border bg-muted/30 p-2">
               {team.map((u) => (
-                <label key={u.id} className="flex cursor-pointer items-center gap-2 text-sm">
+                <label
+                  key={u.id}
+                  className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 hover:bg-background"
+                >
                   <Checkbox
                     checked={memberIds.includes(u.id)}
                     onCheckedChange={() => toggleMember(u.id)}
                   />
-                  <span>{u.name}</span>
-                  <span className="text-muted-foreground">({u.email})</span>
+                  <UserAvatar user={u} size="sm" />
+                  <div className="min-w-0 text-left">
+                    <p className="truncate text-sm font-medium">
+                      {u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.name}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">{u.email}</p>
+                  </div>
                 </label>
               ))}
             </div>
