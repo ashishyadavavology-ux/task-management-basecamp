@@ -61,6 +61,8 @@ export function MemberFormDialog({
         phone: phone.trim(),
       });
       onOpenChange(false);
+    } catch {
+      // Error toast shown by parent
     } finally {
       setSaving(false);
     }

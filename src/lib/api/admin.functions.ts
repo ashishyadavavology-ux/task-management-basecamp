@@ -47,13 +47,15 @@ export const createTeamMember = createServerFn({ method: "POST" })
       phone: data.phone?.trim() || "",
     });
 
-    await admin.from("user_roles").upsert({ user_id: userId, role: "member" });
+    await admin.from("user_roles").upsert(
+      { user_id: userId, role: "member" },
+      { onConflict: "user_id,role" },
+    );
 
-    const { error: memberError } = await admin.from("workspace_members").upsert({
-      workspace_id: data.workspaceId,
-      user_id: userId,
-      role: "member",
-    });
+    const { error: memberError } = await admin.from("workspace_members").upsert(
+      { workspace_id: data.workspaceId, user_id: userId, role: "member" },
+      { onConflict: "workspace_id,user_id" },
+    );
     if (memberError) throw new Error(memberError.message);
 
     await admin.from("workspace_invites").delete().eq("email", email);

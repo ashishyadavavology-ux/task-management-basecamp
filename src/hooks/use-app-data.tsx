@@ -24,6 +24,7 @@ import {
   updateTeamMember,
 } from "@/lib/api/admin.functions";
 import {
+  createMemberAsOwner,
   createProject,
   createTask,
   deleteProject,
@@ -196,47 +197,85 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   const handleAddMember = async (input: MemberFormInput) => {
     if (!workspace) return;
-    const accessToken = await getAccessToken();
-    await createTeamMember({
-      data: {
-        accessToken,
-        workspaceId: workspace.id,
+    if (!input.password || input.password.length < 8) {
+      throw new Error("Password must be at least 8 characters.");
+    }
+
+    try {
+      const accessToken = await getAccessToken();
+      await createTeamMember({
+        data: {
+          accessToken,
+          workspaceId: workspace.id,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          email: input.email,
+          password: input.password,
+          phone: input.phone,
+        },
+      });
+    } catch {
+      await createMemberAsOwner(workspace.id, {
         firstName: input.firstName,
         lastName: input.lastName,
         email: input.email,
-        password: input.password!,
+        password: input.password,
         phone: input.phone,
-      },
-    });
+      });
+    }
+
     await refresh();
     toast.success("Member added — they can sign in with email & password.");
   };
 
   const handleEditMember = async (userId: string, input: MemberFormInput) => {
     if (!workspace) return;
-    const accessToken = await getAccessToken();
-    await updateTeamMember({
-      data: {
-        accessToken,
-        workspaceId: workspace.id,
-        userId,
-        firstName: input.firstName,
-        lastName: input.lastName,
-        email: input.email,
-        password: input.password,
-        phone: input.phone,
-      },
-    });
+    try {
+      const accessToken = await getAccessToken();
+      await updateTeamMember({
+        data: {
+          accessToken,
+          workspaceId: workspace.id,
+          userId,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          email: input.email,
+          password: input.password,
+          phone: input.phone,
+        },
+      });
+    } catch (serverErr) {
+      const { error } = await supabase.from("profiles").update({
+        first_name: input.firstName.trim(),
+        last_name: input.lastName.trim(),
+        full_name: `${input.firstName.trim()} ${input.lastName.trim()}`.trim(),
+        phone: input.phone?.trim() || "",
+      }).eq("id", userId);
+      if (error) throw serverErr;
+      if (input.password) {
+        toast.message("Profile updated. Password change needs SUPABASE_SERVICE_ROLE_KEY in .env.");
+      }
+    }
     await refresh();
     toast.success("Member updated");
   };
 
   const handleRemoveMember = async (userId: string) => {
     if (!workspace) return;
-    const accessToken = await getAccessToken();
-    await deleteTeamMember({
-      data: { accessToken, workspaceId: workspace.id, userId },
-    });
+    try {
+      const accessToken = await getAccessToken();
+      await deleteTeamMember({
+        data: { accessToken, workspaceId: workspace.id, userId },
+      });
+    } catch {
+      if (userId === workspace.ownerId) throw new Error("Cannot remove the owner.");
+      const { error } = await supabase
+        .from("workspace_members")
+        .delete()
+        .eq("workspace_id", workspace.id)
+        .eq("user_id", userId);
+      if (error) throw error;
+    }
     await refresh();
     toast.success("Member removed");
   };

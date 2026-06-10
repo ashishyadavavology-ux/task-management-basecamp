@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { MemberFormDialog } from "@/components/member-form-dialog";
 import { useAppData } from "@/hooks/use-app-data";
+import { toast } from "sonner";
 import type { User } from "@/lib/types";
 import {
   AlertDialog,
@@ -48,8 +49,13 @@ function Team() {
   };
 
   const handleSubmit = async (input: Parameters<typeof addMember>[0]) => {
-    if (editing) await editMember(editing.id, input);
-    else await addMember(input);
+    try {
+      if (editing) await editMember(editing.id, input);
+      else await addMember(input);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to save member");
+      throw e;
+    }
   };
 
   const confirmRemove = async () => {

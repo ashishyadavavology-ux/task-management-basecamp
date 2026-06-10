@@ -202,6 +202,95 @@ export async function setProjectMembers(projectId: string, memberIds: string[]) 
   }
 }
 
+/** Create member without service role — owner session creates account then restores login. */
+export async function createMemberAsOwner(
+  workspaceId: string,
+  input: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    phone?: string;
+  },
+) {
+  const normalized = normalizeEmail(input.email);
+  const fullName = `${input.firstName.trim()} ${input.lastName.trim()}`.trim();
+
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("email", normalized)
+    .maybeSingle();
+
+  if (existing?.id) {
+    const { error } = await supabase.from("workspace_members").upsert(
+      { workspace_id: workspaceId, user_id: existing.id, role: "member" as const },
+      { onConflict: "workspace_id,user_id" },
+    );
+    if (error) throw error;
+    await supabase.from("profiles").update({
+      first_name: input.firstName.trim(),
+      last_name: input.lastName.trim(),
+      full_name: fullName,
+      phone: input.phone?.trim() || "",
+    }).eq("id", existing.id);
+    return { id: existing.id };
+  }
+
+  const { data: { session: adminSession } } = await supabase.auth.getSession();
+  if (!adminSession) throw new Error("Please sign in again as admin.");
+
+  await supabase.from("workspace_invites").upsert(
+    {
+      workspace_id: workspaceId,
+      email: normalized,
+      invited_by: adminSession.user.id,
+    },
+    { onConflict: "workspace_id,email" },
+  );
+
+  const { data, error } = await supabase.auth.signUp({
+    email: normalized,
+    password: input.password,
+    options: {
+      data: {
+        full_name: fullName,
+        first_name: input.firstName.trim(),
+        last_name: input.lastName.trim(),
+        phone: input.phone?.trim() || "",
+      },
+    },
+  });
+
+  if (error) {
+    if (error.message.toLowerCase().includes("already")) {
+      throw new Error("This email is already registered. Ask them to sign in, or remove old account from Supabase Users.");
+    }
+    throw error;
+  }
+
+  const newUserId = data.user?.id;
+  if (!newUserId) throw new Error("Could not create member account.");
+
+  await supabase.auth.signOut();
+  const { error: restoreError } = await supabase.auth.setSession({
+    access_token: adminSession.access_token,
+    refresh_token: adminSession.refresh_token,
+  });
+  if (restoreError) {
+    throw new Error("Member created but admin session expired — please sign in again.");
+  }
+
+  await supabase.from("workspace_members").upsert(
+    { workspace_id: workspaceId, user_id: newUserId, role: "member" as const },
+    { onConflict: "workspace_id,user_id" },
+  );
+
+  await supabase.from("workspace_invites").delete().eq("email", normalized);
+
+  return { id: newUserId };
+}
+
 export async function inviteTeamMember(workspaceId: string, email: string, invitedBy: string) {
   const normalized = normalizeEmail(email);
   if (normalized === normalizeEmail(OWNER_EMAIL)) {
